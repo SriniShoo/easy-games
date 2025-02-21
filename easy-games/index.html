@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tambola Game - Pro Edition</title>
+
+  <!-- Manifest & PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="#007bff">
+
+  <style>
+    /* Overall page styling for a professional look */
+    body {
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f7fa;
+      color: #333;
+      position: relative;
+    }
+    h1 {
+      margin-bottom: 20px;
+      font-size: 3.2em; /* Larger heading */
+    }
+    #controls {
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 22px; /* Larger button text */
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    #restartBtn {
+      font-size: 26px;
+      padding: 12px 18px;
+    }
+    /* Settings icon (gear) in the top right corner */
+    #settingsIcon {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 40px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: #007bff;
+    }
+    /* Settings panel styling */
+    #settingsPanel {
+      position: fixed;
+      top: 60px;
+      right: 20px;
+      width: 280px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      padding: 15px;
+      z-index: 100;
+      display: none;
+      text-align: left;
+    }
+    #settingsPanel h2 {
+      margin-top: 0;
+      font-size: 1.4em;
+    }
+    #settingsPanel label {
+      font-size: 16px;
+      display: block;
+      margin-bottom: 5px;
+    }
+    #settingsPanel select {
+      width: 100%;
+      padding: 8px;
+      font-size: 16px;
+    }
+    #closeSettingsBtn {
+      background: #e74c3c;
+      color: #fff;
+      border: none;
+      padding: 8px 12px;
+      margin-top: 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    /* Reserve space for recent numbers */
+    #recentNumbers {
+      margin: 10px 0;
+      min-height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+    /* Grid container: fill the width of the screen with padding */
+    #numberGrid {
+      display: grid;
+      grid-template-columns: repeat(10, 1fr);
+      gap: 5px;
+      width: 100%;
+      padding: 10px;
+      box-sizing: border-box;
+      margin: 20px auto;
+    }
+    /* Grid cells: square cells using aspect-ratio and larger text */
+    .number {
+      background: linear-gradient(135deg, #ffffff, #e6e9f0);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px; /* Larger grid number font */
+      font-weight: bold;
+      transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+      aspect-ratio: 1 / 1;
+    }
+    .number.marked {
+      background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
+      color: #333;
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      animation: pulse 0.5s ease-in-out;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    /* Fade in animation for recent numbers */
+    .recent-number {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Tambola Game</h1>
+  <div id="controls">
+    <!-- Renamed button to a professional label -->
+    <button id="nextBtn">Draw Next Number</button>
+    <button id="restartBtn" title="Restart Game">&#x21bb;</button>
+  </div>
+  <!-- Settings icon (gear) in top right corner -->
+  <button id="settingsIcon" title="Settings">&#9881;</button>
+  <!-- Settings panel hidden by default -->
+  <div id="settingsPanel">
+    <h2>Settings</h2>
+    <label for="voiceSelect">Voice (Indian English preferred):</label>
+    <select id="voiceSelect"></select>
+    <button id="closeSettingsBtn">Close</button>
+  </div>
+  <!-- Container for the 5 most recent announced numbers -->
+  <div id="recentNumbers"></div>
+  <!-- The grid of numbers 1 to 90 -->
+  <div id="numberGrid"></div>
+
+  <script>
+    // Global game variables
+    let availableNumbers = [];
+    let recentNumbers = [];
+    // Font sizes for recent numbers (oldest to newest)
+    const sizes = ["1.6em", "1.8em", "2em", "2.2em", "2.4em"];
+    // Colors from light blue (oldest) to dark blue (newest)
+    const recencyColors = ["#B0E0E6", "#87CEEB", "#6495ED", "#4169E1", "#00008B"];
+
+    // DOM element references
+    const nextBtn = document.getElementById("nextBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const settingsIcon = document.getElementById("settingsIcon");
+    const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+    const settingsPanel = document.getElementById("settingsPanel");
+    const recentNumbersDiv = document.getElementById("recentNumbers");
+    const numberGrid = document.getElementById("numberGrid");
+    const voiceSelect = document.getElementById("voiceSelect");
+
+    // Build grid cells for numbers 1 to 90
+    function initGrid() {
+      numberGrid.innerHTML = "";
+      for (let i = 1; i <= 90; i++) {
+        const cell = document.createElement("div");
+        cell.classList.add("number");
+        cell.id = "num-" + i;
+        cell.textContent = i;
+        numberGrid.appendChild(cell);
+      }
+    }
+
+    // Initialize/reset game
+    function initGame() {
+      availableNumbers = Array.from({ length: 90 }, (_, i) => i + 1);
+      recentNumbers = [];
+      nextBtn.disabled = false;
+      recentNumbersDiv.innerHTML = "";
+      initGrid();
+    }
+
+    // Update recent numbers display with size and color cues
+    function updateRecentDisplay() {
+      recentNumbersDiv.innerHTML = "";
+      const count = recentNumbers.length;
+      const startIndex = 5 - count;
+      recentNumbers.forEach((num, index) => {
+        const span = document.createElement("span");
+        span.classList.add("recent-number");
+        span.textContent = num;
+        span.style.fontSize = sizes[startIndex + index];
+        span.style.color = recencyColors[startIndex + index];
+        recentNumbersDiv.appendChild(span);
+      });
+    }
+
+    // Convert a number to words (supports numbers 1 to 90)
+    function numberToWords(num) {
+      const ones = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", 
+                    "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen"];
+      const tens = ["", "", "twenty", "thirty", "forty", "fifty", "sixty", "seventy", "eighty", "ninety"];
+      if (num < 20) {
+        return ones[num];
+      } else {
+        const tenPart = Math.floor(num / 10);
+        const onePart = num % 10;
+        return onePart === 0 ? tens[tenPart] : tens[tenPart] + " " + ones[onePart];
+      }
+    }
+
+    // Build the announcement text in the format:
+    // For 3: "zero three three" (padded to "03" then full word)
+    // For 34: "three four thirty four"
+    function numberAnnouncementText(num) {
+      const padded = num < 10 ? "0" + num : num.toString();
+      const digitWords = { 
+        "0": "zero", 
+        "1": "one", 
+        "2": "two", 
+        "3": "three", 
+        "4": "four", 
+        "5": "five", 
+        "6": "six", 
+        "7": "seven", 
+        "8": "eight", 
+        "9": "nine" 
+      };
+      const digitAnnouncement = padded.split("").map(d => digitWords[d]).join(" ");
+      const words = numberToWords(num);
+      return digitAnnouncement + " " + words;
+    }
+
+    // Announce next number with audio and update display
+    nextBtn.addEventListener("click", () => {
+      if (availableNumbers.length === 0) {
+        alert("All numbers have been announced!");
+        nextBtn.disabled = true;
+        return;
+      }
+      const randomIndex = Math.floor(Math.random() * availableNumbers.length);
+      const announcedNumber = availableNumbers.splice(randomIndex, 1)[0];
+
+      const cell = document.getElementById("num-" + announcedNumber);
+      if (cell) {
+        cell.classList.add("marked");
+      }
+
+      recentNumbers.push(announcedNumber);
+      if (recentNumbers.length > 5) {
+        recentNumbers.shift();
+      }
+      updateRecentDisplay();
+
+      // Create announcement string in the desired format
+      const announcement = numberAnnouncementText(announcedNumber);
+      
+      // Audio announcement via Web Speech API
+      if ('speechSynthesis' in window) {
+        let utterance = new SpeechSynthesisUtterance(announcement);
+        utterance.lang = 'en-US';
+        const voices = speechSynthesis.getVoices();
+        const selectedVoiceValue = voiceSelect.value;
+        const selectedVoice = voices.find(v => (v.name + "|" + v.lang) === selectedVoiceValue);
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+        }
+        speechSynthesis.speak(utterance);
+      }
+
+      if (availableNumbers.length === 0) {
+        alert("All numbers have been announced!");
+        nextBtn.disabled = true;
+      }
+    });
+
+    // Restart game with confirmation if in progress
+    restartBtn.addEventListener("click", () => {
+      if (availableNumbers.length !== 90) {
+        if (!confirm("Are you sure you want to restart the game? This will reset all announced numbers.")) {
+          return;
+        }
+      }
+      if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+      }
+      initGame();
+    });
+
+    // Toggle settings panel visibility
+    settingsIcon.addEventListener("click", () => {
+      settingsPanel.style.display = "block";
+    });
+    closeSettingsBtn.addEventListener("click", () => {
+      settingsPanel.style.display = "none";
+    });
+
+    // Populate voice options: try to use Indian English voices first
+    function populateVoices() {
+      const allVoices = speechSynthesis.getVoices();
+      let indianVoices = allVoices.filter(voice => voice.lang && voice.lang.startsWith("en-IN"));
+      if (indianVoices.length === 0) {
+        indianVoices = allVoices.filter(voice => voice.lang && voice.lang.startsWith("en"));
+      }
+      voiceSelect.innerHTML = "";
+      indianVoices.forEach((voice) => {
+        const option = document.createElement("option");
+        option.value = voice.name + "|" + voice.lang;
+        option.textContent = `${voice.name} (${voice.lang})`;
+        voiceSelect.appendChild(option);
+      });
+      const defaultVoice = localStorage.getItem("defaultVoice");
+      if (defaultVoice) {
+        let found = false;
+        for (let i = 0; i < voiceSelect.options.length; i++) {
+          if (voiceSelect.options[i].value === defaultVoice) {
+            voiceSelect.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found && voiceSelect.options.length > 0) {
+          voiceSelect.selectedIndex = 0;
+          localStorage.setItem("defaultVoice", voiceSelect.options[0].value);
+        }
+      } else if (voiceSelect.options.length > 0) {
+        voiceSelect.selectedIndex = 0;
+        localStorage.setItem("defaultVoice", voiceSelect.options[0].value);
+      }
+    }
+
+    voiceSelect.addEventListener("change", () => {
+      localStorage.setItem("defaultVoice", voiceSelect.value);
+    });
+
+    if ('speechSynthesis' in window) {
+      populateVoices();
+      speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
+    // Start the game on page load
+    initGame();
+  </script>
+
+  <!-- Register service worker for PWA functionality -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(registration => {
+          console.log('Service Worker registered with scope:', registration.scope);
+        })
+        .catch(error => {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
+  </script>
+</body>
+</html>
