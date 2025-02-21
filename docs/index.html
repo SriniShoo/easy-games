@@ -21,27 +21,34 @@
       background: #f5f7fa;
       color: #333;
       position: relative;
+      max-width: 1200px;
+      margin: 0 auto;
+      min-height: 100vh; /* Full viewport height */
+      display: flex;
+      flex-direction: column;
     }
     h1 {
       margin-bottom: 20px;
-      font-size: 3.2em; /* Larger heading */
+      font-size: clamp(2em, 5vw, 3.2em); /* Responsive font size */
+      text-align: center;
     }
     #controls {
       margin-bottom: 20px;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
+      gap: clamp(8px, 2vw, 16px);
       flex-wrap: wrap;
+      padding: 0 10px;
     }
     button {
       background: #007bff;
       color: #fff;
       border: none;
-      padding: 12px 24px;
+      padding: clamp(8px, 2vw, 12px) clamp(16px, 3vw, 24px);
       border-radius: 4px;
       cursor: pointer;
-      font-size: 22px; /* Larger button text */
+      font-size: clamp(16px, 3vw, 22px); /* Responsive font size */
       transition: background 0.3s ease;
     }
     button:hover {
@@ -56,18 +63,20 @@
       position: absolute;
       top: 20px;
       right: 20px;
-      font-size: 40px;
+      font-size: clamp(40px, 6vw, 48px); /* Responsive size */
       background: transparent;
       border: none;
       cursor: pointer;
       color: #007bff;
+      padding: 8px;
+      z-index: 10;
     }
     /* Settings panel styling */
     #settingsPanel {
       position: fixed;
       top: 60px;
       right: 20px;
-      width: 280px;
+      width: min(280px, 90vw); /* Responsive width */
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -102,34 +111,41 @@
     }
     /* Reserve space for recent numbers */
     #recentNumbers {
-      margin: 10px 0;
-      min-height: 50px;
+      margin: 10px auto;
+      min-height: 60px;
       display: flex;
       justify-content: center;
       align-items: center;
-      gap: 10px;
+      gap: clamp(8px, 2vw, 16px);
+      flex-wrap: wrap;
+      padding: 10px;
+      max-width: 800px;
     }
-    /* Grid container: fill the width of the screen with padding */
+    /* Grid container: Fixed 9x10 grid */
     #numberGrid {
+      flex: 1;
+      margin: 10px auto;
       display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 5px;
+      grid-template-columns: repeat(10, 1fr); /* Fixed 10 columns */
+      grid-template-rows: repeat(9, 1fr); /* Fixed 9 rows */
+      gap: clamp(4px, 1vw, 8px);
       width: 100%;
       padding: 10px;
       box-sizing: border-box;
-      margin: 20px auto;
+      max-width: min(1000px, 95vw); /* Responsive max-width */
+      aspect-ratio: 10/9; /* Maintain grid aspect ratio */
     }
-    /* Grid cells: square cells using aspect-ratio and larger text */
+    /* Responsive number cells */
     .number {
       background: linear-gradient(135deg, #ffffff, #e6e9f0);
       border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 36px; /* Larger grid number font */
+      font-size: clamp(16px, 3.5vw, 32px); /* Slightly adjusted font size */
       font-weight: bold;
       transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
-      aspect-ratio: 1 / 1;
+      aspect-ratio: 1; /* Keep cells square */
     }
     .number.marked {
       background: linear-gradient(135deg, #c8e6c9, #a5d6a7);
@@ -151,17 +167,83 @@
       from { opacity: 0; transform: translateY(-10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    /* Media queries for mobile devices */
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+      }
+
+      #gameContainer {
+        gap: 15px;
+      }
+
+      h1 {
+        margin: 40px 0 10px; /* Add space for settings icon */
+      }
+
+      #settingsIcon {
+        top: 15px;
+        right: 15px;
+        padding: 12px; /* Larger touch target */
+      }
+
+      #controls {
+        position: sticky;
+        bottom: 0;
+        background: rgba(245, 247, 250, 0.95); /* Semi-transparent background */
+        padding: 15px 10px;
+        margin: 0 -10px -10px;
+        box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 5;
+      }
+
+      #controls button {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+      }
+
+      #recentNumbers {
+        order: -1; /* Move recent numbers below header */
+        margin: 5px auto 15px;
+      }
+
+      #numberGrid {
+        padding: 5px;
+        gap: 4px; /* Smaller gap on mobile */
+      }
+
+      .number {
+        font-size: clamp(14px, 4vw, 24px); /* Smaller font on mobile */
+      }
+    }
+
+    /* Adjust for larger screens */
+    @media (min-width: 1200px) {
+      #gameContainer {
+        gap: 30px;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>Tambola Game</h1>
-  <div id="controls">
-    <!-- Renamed button to a professional label -->
-    <button id="nextBtn">Draw Next Number</button>
-    <button id="restartBtn" title="Restart Game">&#x21bb;</button>
-  </div>
-  <!-- Settings icon (gear) in top right corner -->
   <button id="settingsIcon" title="Settings">&#9881;</button>
+  
+  <div id="gameContainer">
+    <h1>Tambola Game</h1>
+    
+    <!-- Container for the 5 most recent announced numbers -->
+    <div id="recentNumbers"></div>
+    
+    <!-- The grid of numbers 1 to 90 -->
+    <div id="numberGrid"></div>
+    
+    <div id="controls">
+      <button id="nextBtn">Draw Next Number</button>
+      <button id="restartBtn" title="Restart Game">&#x21bb;</button>
+    </div>
+  </div>
+
   <!-- Settings panel hidden by default -->
   <div id="settingsPanel">
     <h2>Settings</h2>
@@ -169,10 +251,6 @@
     <select id="voiceSelect"></select>
     <button id="closeSettingsBtn">Close</button>
   </div>
-  <!-- Container for the 5 most recent announced numbers -->
-  <div id="recentNumbers"></div>
-  <!-- The grid of numbers 1 to 90 -->
-  <div id="numberGrid"></div>
 
   <script>
     // Global game variables
@@ -244,8 +322,8 @@
     }
 
     // Build the announcement text in the format:
-    // For 3: "zero three three" (padded to "03" then full word)
-    // For 34: "three four thirty four"
+    // For 3: "one three (pause) thirteen"
+    // For 34: "three four (pause) thirty four"
     function numberAnnouncementText(num) {
       const padded = num < 10 ? "0" + num : num.toString();
       const digitWords = { 
@@ -262,7 +340,7 @@
       };
       const digitAnnouncement = padded.split("").map(d => digitWords[d]).join(" ");
       const words = numberToWords(num);
-      return digitAnnouncement + " " + words;
+      return digitAnnouncement;  // Return only digits first
     }
 
     // Announce next number with audio and update display
@@ -286,20 +364,35 @@
       }
       updateRecentDisplay();
 
-      // Create announcement string in the desired format
-      const announcement = numberAnnouncementText(announcedNumber);
-      
-      // Audio announcement via Web Speech API
+      // Split announcement into two parts with a pause
       if ('speechSynthesis' in window) {
-        let utterance = new SpeechSynthesisUtterance(announcement);
-        utterance.lang = 'en-US';
+        // First announce the digits
+        let digitUtterance = new SpeechSynthesisUtterance(numberAnnouncementText(announcedNumber));
+        digitUtterance.lang = 'en-US';
+        digitUtterance.rate = 0.9; // Slightly slower rate for clarity
+        
+        // Then announce the full number
+        let numberUtterance = new SpeechSynthesisUtterance(numberToWords(announcedNumber));
+        numberUtterance.lang = 'en-US';
+        numberUtterance.rate = 0.9;
+
+        // Apply selected voice to both utterances
         const voices = speechSynthesis.getVoices();
         const selectedVoiceValue = voiceSelect.value;
         const selectedVoice = voices.find(v => (v.name + "|" + v.lang) === selectedVoiceValue);
         if (selectedVoice) {
-          utterance.voice = selectedVoice;
+          digitUtterance.voice = selectedVoice;
+          numberUtterance.voice = selectedVoice;
         }
-        speechSynthesis.speak(utterance);
+
+        // Add pause between digit announcement and full number
+        digitUtterance.onend = () => {
+          setTimeout(() => {
+            speechSynthesis.speak(numberUtterance);
+          }, 200); // 200ms pause between announcements
+        };
+
+        speechSynthesis.speak(digitUtterance);
       }
 
       if (availableNumbers.length === 0) {
@@ -329,37 +422,99 @@
       settingsPanel.style.display = "none";
     });
 
-    // Populate voice options: try to use Indian English voices first
+    // Populate voice options: prioritize Indian English voices
     function populateVoices() {
       const allVoices = speechSynthesis.getVoices();
+      
+      // Separate voices by type
       let indianVoices = allVoices.filter(voice => voice.lang && voice.lang.startsWith("en-IN"));
-      if (indianVoices.length === 0) {
-        indianVoices = allVoices.filter(voice => voice.lang && voice.lang.startsWith("en"));
-      }
+      let ukVoices = allVoices.filter(voice => voice.lang && voice.lang.startsWith("en-GB"));
+      let usVoices = allVoices.filter(voice => voice.lang && voice.lang.startsWith("en-US"));
+      let otherEnglishVoices = allVoices.filter(voice => 
+        voice.lang && voice.lang.startsWith("en") && 
+        !voice.lang.startsWith("en-IN") && 
+        !voice.lang.startsWith("en-GB") && 
+        !voice.lang.startsWith("en-US")
+      );
+
       voiceSelect.innerHTML = "";
-      indianVoices.forEach((voice) => {
-        const option = document.createElement("option");
-        option.value = voice.name + "|" + voice.lang;
-        option.textContent = `${voice.name} (${voice.lang})`;
-        voiceSelect.appendChild(option);
-      });
-      const defaultVoice = localStorage.getItem("defaultVoice");
-      if (defaultVoice) {
-        let found = false;
+      
+      // Add option groups for better organization
+      if (indianVoices.length > 0) {
+        const indianGroup = document.createElement("optgroup");
+        indianGroup.label = "Indian English";
+        indianVoices.forEach(voice => {
+          const option = document.createElement("option");
+          option.value = voice.name + "|" + voice.lang;
+          option.textContent = `${voice.name} (${voice.lang})`;
+          indianGroup.appendChild(option);
+        });
+        voiceSelect.appendChild(indianGroup);
+      }
+
+      if (ukVoices.length > 0) {
+        const ukGroup = document.createElement("optgroup");
+        ukGroup.label = "British English";
+        ukVoices.forEach(voice => {
+          const option = document.createElement("option");
+          option.value = voice.name + "|" + voice.lang;
+          option.textContent = `${voice.name} (${voice.lang})`;
+          ukGroup.appendChild(option);
+        });
+        voiceSelect.appendChild(ukGroup);
+      }
+
+      if (usVoices.length > 0) {
+        const usGroup = document.createElement("optgroup");
+        usGroup.label = "American English";
+        usVoices.forEach(voice => {
+          const option = document.createElement("option");
+          option.value = voice.name + "|" + voice.lang;
+          option.textContent = `${voice.name} (${voice.lang})`;
+          usGroup.appendChild(option);
+        });
+        voiceSelect.appendChild(usGroup);
+      }
+
+      if (otherEnglishVoices.length > 0) {
+        const otherGroup = document.createElement("optgroup");
+        otherGroup.label = "Other English";
+        otherEnglishVoices.forEach(voice => {
+          const option = document.createElement("option");
+          option.value = voice.name + "|" + voice.lang;
+          option.textContent = `${voice.name} (${voice.lang})`;
+          otherGroup.appendChild(option);
+        });
+        voiceSelect.appendChild(otherGroup);
+      }
+
+      // Set default voice preference
+      const savedVoice = localStorage.getItem("defaultVoice");
+      if (savedVoice) {
+        // Try to restore saved voice preference
         for (let i = 0; i < voiceSelect.options.length; i++) {
-          if (voiceSelect.options[i].value === defaultVoice) {
+          if (voiceSelect.options[i].value === savedVoice) {
             voiceSelect.selectedIndex = i;
-            found = true;
             break;
           }
         }
-        if (!found && voiceSelect.options.length > 0) {
+      }
+      
+      // If no saved voice or saved voice not found, prefer Indian English
+      if (!savedVoice || voiceSelect.selectedIndex === -1) {
+        // Find first Indian English voice
+        for (let i = 0; i < voiceSelect.options.length; i++) {
+          if (voiceSelect.options[i].value.includes("en-IN")) {
+            voiceSelect.selectedIndex = i;
+            localStorage.setItem("defaultVoice", voiceSelect.options[i].value);
+            break;
+          }
+        }
+        // If no Indian English voice, select first available voice
+        if (voiceSelect.selectedIndex === -1 && voiceSelect.options.length > 0) {
           voiceSelect.selectedIndex = 0;
           localStorage.setItem("defaultVoice", voiceSelect.options[0].value);
         }
-      } else if (voiceSelect.options.length > 0) {
-        voiceSelect.selectedIndex = 0;
-        localStorage.setItem("defaultVoice", voiceSelect.options[0].value);
       }
     }
 
